@@ -158,3 +158,6 @@ Desktop.ini
 models
 football_paper
 videos
+datasets/
+runs
+*.pt

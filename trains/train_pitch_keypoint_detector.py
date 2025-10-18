@@ -1,53 +1,59 @@
 import os
-from roboflow import Roboflow
-from IPython.display import Image
+from ultralytics import YOLO
+import multiprocessing
 
-# 获取当前工作目录
-HOME = os.getcwd()
-print(HOME)
+def main():
+    from IPython.display import Image, display
 
-# 安装所需库
-os.system('pip install -q ultralytics roboflow')
+    HOME = os.getcwd()
+    print(f"当前工作目录: {HOME}")
 
-# 创建 datasets 文件夹
-datasets_dir = os.path.join(HOME, 'datasets')
-os.makedirs(datasets_dir, exist_ok=True)
+    datasets_dir = os.path.join(HOME, 'datasets\\football-field-detection-12')
 
-# 设置 Roboflow API 密钥
-ROBOFLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY')  # 确保在环境变量中设置了 API 密钥
-rf = Roboflow(api_key=ROBOFLOW_API_KEY)
+    if not os.path.exists(datasets_dir) or not os.listdir(datasets_dir):
+        print("数据集不存在或为空，开始下载...")
+        os.makedirs(datasets_dir, exist_ok=True)
+        from roboflow import Roboflow
+        ROBOFLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY')
+        if not ROBOFLOW_API_KEY:
+            raise ValueError("请在环境变量中设置 ROBOFLOW_API_KEY")
 
-# 获取项目和版本信息
-project = rf.workspace("roboflow-jvuqo").project("football-field-detection-f07vi")
-version = project.version(12)
-dataset = version.download("yolov8")
+        rf = Roboflow(api_key=ROBOFLOW_API_KEY)
+        project = rf.workspace("roboflow-jvuqo").project("football-field-detection-f07vi")
+        version = project.version(12)
+        version.download("yolov8", location=datasets_dir) 
+    else:
+        print("数据集已存在，跳过下载。")
 
-# 修改数据集配置文件路径
-data_yaml_path = os.path.join(dataset.location, 'data.yaml')
-with open(data_yaml_path, 'r') as file:
-    data_yaml = file.readlines()
 
-# 更新 YAML 文件的路径配置
-data_yaml = [line.replace("train: ", "train: ../train/images") if "train: " in line else line for line in data_yaml]
-data_yaml = [line.replace("val: ", "val: ../valid/images") if "val: " in line else line for line in data_yaml]
+    data_yaml_path = os.path.join(datasets_dir, 'data.yaml')
 
-# 写回更新后的 YAML 文件
-with open(data_yaml_path, 'w') as file:
-    file.writelines(data_yaml)
 
-# 训练 YOLO 模型（pose任务）
-os.system(f"yolo task=pose mode=train model=yolov8x-pose.pt data={data_yaml_path} batch=16 epochs=100 imgsz=640 mosaic=0.0 plots=True")
+    model = YOLO("yolov8x-pose.pt")  
+    model.train(
+        task="pose",
+        data=data_yaml_path,
+        epochs=100,
+        batch=16,
+        imgsz=640,
+        mosaic=0.0,
+        plots=True,
+        name="train"
+    )
 
-# 查看训练结果
-train_results_dir = os.path.join(HOME, 'runs/pose/train/')
-os.system(f"ls {train_results_dir}")
+    train_results_dir = os.path.join(HOME, 'runs/pitch/pose/train/')
 
-# 显示训练结果图像
-Image(filename=os.path.join(train_results_dir, 'results.png'), width=600)
-Image(filename=os.path.join(train_results_dir, 'val_batch0_pred.jpg'), width=600)
+    for img_name in ['results.png', 'val_batch0_pred.jpg']:
+        img_path = os.path.join(train_results_dir, img_name)
+        if os.path.exists(img_path):
+            display(Image(filename=img_path, width=600))
+        else:
+            print(f"{img_name} 不存在")
 
-# 验证模型
-os.system(f"yolo task=pose mode=val model={os.path.join(HOME, 'runs/pose/train/weights/best.pt')} data={data_yaml_path}")
+    best_model_path = os.path.join(train_results_dir, 'weights/best.pt')
+    model.val(task="pose", data=data_yaml_path, imgsz=640, model=best_model_path)
 
-# 部署模型
-project.version(dataset.version).deploy(model_type="yolov8-pose", model_path=os.path.join(HOME, 'runs/pose/train/'))
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    main()
+

@@ -5,7 +5,7 @@ push:
 
 
 pitch:
-      sudo uv run  main.py --source_video_path models/2e57b9_0.mp \
+      uv run  main.py --source_video_path models/2e57b9_0.mp \
       --target_video_path models/2e57b9_0-pitch-detection.mp4 \
       --device cuda --mode PITCH_DETECTION
 
@@ -42,3 +42,19 @@ radar:
         uv run main.py --source_video_path models/2e57b9_0.mp4 \
         --target_video_path models/2e57b9_0-radar.mp4 \
         --device cuda --mode RADAR
+
+
+
+train_player: 
+      uv run trains/train_player_detector.py 
+
+train_ball:
+      uv run  trains/train_ball_detector.py 
+
+train_pitch:
+      uv run  trains/train_pitch_keypoint_detector.py
+      
+      
+      
+clear:
+      git rm --cached -r . 
