@@ -27,6 +27,8 @@ if __name__ == "__main__":
 
     for video_file in videos_files:
         file_name = video_file.split(".")[0].replace("\\", "/")
+        if  file_name.__contains__("detection_result") :
+            continue
         video_file = os.path.join("./videos/", video_file)
         if os.path.isfile(video_file):
             target_file = os.path.join(

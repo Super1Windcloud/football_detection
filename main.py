@@ -67,10 +67,6 @@ ELLIPSE_LABEL_ANNOTATOR = sv.LabelAnnotator(
 
 
 class Mode(Enum):
-    """
-    Enum class representing different modes of operation for Soccer AI video analysis.
-    """
-
     PITCH_DETECTION = "PITCH_DETECTION"
     PLAYER_DETECTION = "PLAYER_DETECTION"
     BALL_DETECTION = "BALL_DETECTION"
@@ -169,16 +165,7 @@ def run_player_detection(source_video_path: str, device: str) -> Iterator[np.nda
 
 
 def run_ball_detection(source_video_path: str, device: str) -> Iterator[np.ndarray]:
-    """
-    Run ball detection on a video and yield annotated frames.
 
-    Args:
-        source_video_path (str): Path to the source video.
-        device (str): Device to run the model on (e.g., 'cpu', 'cuda').
-
-    Yields:
-        Iterator[np.ndarray]: Iterator over annotated frames.
-    """
     ball_detection_model = YOLO(BALL_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
     ball_tracker = BallTracker(buffer_size=20)
@@ -202,16 +189,7 @@ def run_ball_detection(source_video_path: str, device: str) -> Iterator[np.ndarr
 
 
 def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndarray]:
-    """
-    Run player tracking on a video and yield annotated frames with tracked players.
 
-    Args:
-        source_video_path (str): Path to the source video.
-        device (str): Device to run the model on (e.g., 'cpu', 'cuda').
-
-    Yields:
-        Iterator[np.ndarray]: Iterator over annotated frames.
-    """
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
     tracker = sv.ByteTrack(minimum_consecutive_frames=3)
@@ -233,16 +211,7 @@ def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndar
 def run_team_classification(
     source_video_path: str, device: str
 ) -> Iterator[np.ndarray]:
-    """
-    Run team classification on a video and yield annotated frames with team colors.
 
-    Args:
-        source_video_path (str): Path to the source video.
-        device (str): Device to run the model on (e.g., 'cpu', 'cuda').
-
-    Yields:
-        Iterator[np.ndarray]: Iterator over annotated frames.
-    """
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(
         source_path=source_video_path, stride=STRIDE
@@ -276,7 +245,7 @@ def run_team_classification(
         referees = detections[detections.class_id == REFEREE_CLASS_ID]
 
         detections = sv.Detections.merge([players, goalkeepers, referees])
-        color_lookup = np.ndarray(
+        color_lookup = np.array(
             players_team_id.tolist()
             + goalkeepers_team_id.tolist()
             + [REFEREE_CLASS_ID] * len(referees)
@@ -285,10 +254,13 @@ def run_team_classification(
 
         annotated_frame = frame.copy()
         annotated_frame = ELLIPSE_ANNOTATOR.annotate(
-            annotated_frame, detections, custom_color_lookup=color_lookup
+            annotated_frame,
+            detections,
         )
         annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(
-            annotated_frame, detections, labels, custom_color_lookup=color_lookup
+            annotated_frame,
+            detections,
+            labels,
         )
         yield annotated_frame
 
@@ -339,10 +311,10 @@ def run_radar(source_video_path: str, device: str) -> Iterator[np.ndarray]:
 
         annotated_frame = frame.copy()
         annotated_frame = ELLIPSE_ANNOTATOR.annotate(
-            annotated_frame, detections, custom_color_lookup=color_lookup
+            annotated_frame, detections,
         )
         annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(
-            annotated_frame, detections, labels, custom_color_lookup=color_lookup
+            annotated_frame, detections, labels,
         )
 
         h, w, _ = frame.shape

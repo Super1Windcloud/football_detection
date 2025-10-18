@@ -5,8 +5,8 @@ push:
 
 
 pitch:
-      uv run  main.py --source_video_path models/pitch.mp4  \
-      --target_video_path models/pitch-detection.mp4 \
+      uv run  main.py --source_video_path models/ball.mp4  \
+      --target_video_path models/ball-pitch-detection.mp4 \
       --device cuda --mode PITCH_DETECTION
 
 
@@ -39,8 +39,8 @@ team:
 
 
 radar:
-        uv run main.py --source_video_path models/2e57b9_0.mp4 \
-        --target_video_path models/2e57b9_0-radar.mp4 \
+        uv run main.py --source_video_path models/radar.mp4 \
+        --target_video_path models/radar-detection.mp4 \
         --device cuda --mode RADAR
 
 
@@ -54,7 +54,6 @@ train_ball:
 train_pitch:
       uv run  trains/train_pitch_keypoint_detector.py
       
-      
-      
+
 clear:
       git rm --cached -r . 
