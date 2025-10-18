@@ -1,107 +1,109 @@
-# Football Video Analysis Tool
+# 基于 YOLOv8 的足球分析系统
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+本项目利用 [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) 深度学习框架，实现对足球比赛视频或图像中的关键元素进行检测和分析。
 
-A powerful computer vision tool for analyzing soccer/football matches from video. This project provides various analysis
-modes including player detection, ball tracking, team classification, and radar visualization.
+## 🌟 主要功能
 
-## Features
+-   **球员检测**: 实时检测和识别人场上的所有球员。
+-   **足球检测**: 精确跟踪足球在场上的位置。
+-   **球场关键点检测**: 识别足球场的关键几何点（如角点、球门区域等），用于后续的场地重建和战术分析。
 
-- **Player Detection**: Identify and track players on the field
-- **Ball Detection**: Track the ball's position and movement
-- **Team Classification**: Classify players into their respective teams
-- **Pitch Detection**: Automatically detect and map the soccer pitch
-- **Radar View**: Generate a top-down radar view of player positions
-- **Player Tracking**: Track individual players across frames
+## 🛠️ 技术栈
 
-## Prerequisites
+-   **Python 3.8+**
+-   **PyTorch**
+-   **Ultralytics YOLOv8**: 用于目标检测和姿态估计的核心框架。
+-   **Roboflow**: 用于数据集的托管和版本管理。
+-   **OpenCV**: 用于图像处理。
 
-- Python 3.8+
-- CUDA (for GPU acceleration, recommended)
-- FFmpeg (for video processing)
+## 🚀 环境搭建
 
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd sport
-   ```
-
-2. Create and activate a virtual environment (recommended):
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-### Command Line Interface
-
-Run the analysis using the main script:
+### 1. 克隆仓库
 
 ```bash
-python main.py --source_video_path path/to/your/video.mp4 --mode MODE --device cuda  # or cpu
+git clone <your-repository-url> 
+cd llm-captcha-bypas
 ```
 
-### Interactive Mode
+### 2. 安装依赖
 
-For a more user-friendly interface, use the demo script:
+建议在虚拟环境中安装项目依赖，以避免与其他项目产生冲突。
 
 ```bash
-python demo.py
+# 创建并激活虚拟环境 (以 venv 为例)
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+
+# 安装依赖
+pip install ultralytics roboflow ipython opencv-python
 ```
 
-Then follow the on-screen prompts to select your desired analysis mode and input video.
+### 3. 设置环境变量
 
-### Available Modes
+为了从 Roboflow 下载数据集，您需要设置 API 密钥。请登录您的 Roboflow 账户获取密钥。
 
-- `PITCH_DETECTION`: Detect and analyze the soccer pitch
-- `PLAYER_DETECTION`: Detect players on the field
-- `BALL_DETECTION`: Track the ball's movement
-- `PLAYER_TRACKING`: Track players across frames
-- `TEAM_CLASSIFICATION`: Classify players into teams
-- `RADAR`: Generate a radar view of player positions
+**Windows (PowerShell):**
 
-## Project Structure
-
-```
-├── models/                  # Pre-trained models
-├── sports/                  # Source code
-│   ├── annotators/         # Annotation utilities
-│   ├── common/             # Common utilities
-│   └── configs/            # Configuration files
-├── videos/                 # Sample videos
-├── main.py                 # Main script
-├── demo.py                 # Interactive demo
-└── README.md               # This file
+```powershell
+$env:ROBOFLOW_API_KEY="YOUR_API_KEY"
 ```
 
-## Configuration
+**macOS/Linux:**
 
-Edit the `.env` file to configure environment-specific settings:
-
-```
-# Example .env file
-MODEL_PATH=models/football-player-detection.pt
+```bash
+export ROBOFLOW_API_KEY="YOUR_API_KEY"
 ```
 
-## Contributing
+> **注意**: 将 `YOUR_API_KEY` 替换为您自己的 Roboflow API 密钥。
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 📦 数据集
 
-## License
+本项目使用的数据集托管在 Roboflow Universe 上。当您首次运行训练脚本时，程序会自动检查本地 `datasets` 目录。如果数据集不存在，它将自动从 Roboflow 下载。
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+-   **球员检测**: [football-players-detection](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc)
+-   **足球检测**: [football-ball-detection](https://universe.roboflow.com/roboflow-jvuqo/football-ball-detection-rejhg)
+-   **球场检测**: [football-field-detection](https://universe.roboflow.com/roboflow-jvuqo/football-field-detection-f07vi)
 
-## Acknowledgments
+## 🏋️ 模型训练
 
-- Built with [YOLOv8](https://ultralytics.com/yolov8)
-- Uses [Supervision](https://roboflow.com/supervision) for computer vision utilities
-- Inspired by modern sports analytics tools
+您可以分别运行以下脚本来训练不同的模型。训练结果（包括权重文件和可视化图表）将保存在 `runs/` 目录下。
+
+### 1. 训练球员检测模型
+
+```bash
+python trains/train_player_detector.py
+```
+
+-   **模型**: `yolov8x.pt`
+-   **结果目录**: `runs/player/detect/train/`
+
+### 2. 训练足球检测模型
+
+```bash
+python trains/train_ball_detector.py
+```
+
+-   **模型**: `yolov8x.pt`
+-   **结果目录**: `runs/ball/detect/train/`
+
+### 3. 训练球场关键点检测模型
+
+```bash
+python trains/train_pitch_keypoint_detector.py
+```
+
+-   **模型**: `yolov8x-pose.pt`
+-   **结果目录**: `runs/pitch/pose/train/`
+
+## 📊 查看结果
+
+训练完成后，脚本会自动验证模型性能，并将训练过程中的图表（如 `results.png`、`confusion_matrix.png`）和预测示例（`val_batch0_pred.jpg`）保存在对应的结果目录中。
+
+如果您在 Jupyter 环境中运行，脚本会尝试直接显示这些图像。
+
+## 📜 许可证
+
+本项目采用 [MIT License](LICENSE) 开源。

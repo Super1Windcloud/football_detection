@@ -25,7 +25,7 @@ def main():
 
     model.train(
         data=data_yaml_path,
-        epochs=50,
+        epochs=50,   
         batch=6,
         imgsz=1280,
         plots=True,  # 自动生成训练曲线和混淆矩阵
