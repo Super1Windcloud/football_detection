@@ -148,8 +148,6 @@ dmypy.json
 # Windows
 Thumbs.db
 Desktop.ini
-
-# Linux
 *~
 .directory
 .Trash-*
