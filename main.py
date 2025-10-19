@@ -17,6 +17,7 @@ from sports.common.team import TeamClassifier
 from sports.common.view import ViewTransformer
 from sports.configs.soccer import SoccerPitchConfiguration
 
+
 PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PLAYER_DETECTION_MODEL_PATH = os.path.join(
     PARENT_DIR, "models/football-player-detection.pt"
@@ -165,7 +166,6 @@ def run_player_detection(source_video_path: str, device: str) -> Iterator[np.nda
 
 
 def run_ball_detection(source_video_path: str, device: str) -> Iterator[np.ndarray]:
-
     ball_detection_model = YOLO(BALL_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
     ball_tracker = BallTracker(buffer_size=20)
@@ -188,8 +188,25 @@ def run_ball_detection(source_video_path: str, device: str) -> Iterator[np.ndarr
         yield annotated_frame
 
 
-def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndarray]:
+def run_ball_detection_speed(
+    source_video_path: str, device: str
+) -> Iterator[np.ndarray]:
+    ball_detection_model = YOLO(BALL_DETECTION_MODEL_PATH).to(device=device)
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path
+    )
+    ball_tracker = BallTracker(buffer_size=20)
+    ball_annotator = BallAnnotator(radius=6, buffer_size=10)
 
+    for frame in frame_generator:
+        result = ball_detection_model(frame, imgsz=640, verbose=False)[0]
+        detections = sv.Detections.from_ultralytics(result)
+        detections = ball_tracker.update(detections)
+        annotated_frame = ball_annotator.annotate(frame.copy(), detections)
+        yield annotated_frame
+
+
+def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndarray]:
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
     tracker = sv.ByteTrack(minimum_consecutive_frames=3)
@@ -211,7 +228,6 @@ def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndar
 def run_team_classification(
     source_video_path: str, device: str
 ) -> Iterator[np.ndarray]:
-
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(
         source_path=source_video_path, stride=STRIDE
@@ -311,10 +327,13 @@ def run_radar(source_video_path: str, device: str) -> Iterator[np.ndarray]:
 
         annotated_frame = frame.copy()
         annotated_frame = ELLIPSE_ANNOTATOR.annotate(
-            annotated_frame, detections,
+            annotated_frame,
+            detections,
         )
         annotated_frame = ELLIPSE_LABEL_ANNOTATOR.annotate(
-            annotated_frame, detections, labels,
+            annotated_frame,
+            detections,
+            labels,
         )
 
         h, w, _ = frame.shape
@@ -340,7 +359,7 @@ def start_run_model(
             source_video_path=source_video_path, device=device
         )
     elif mode == Mode.BALL_DETECTION:
-        frame_generator = run_ball_detection(
+        frame_generator = run_ball_detection_speed(
             source_video_path=source_video_path, device=device
         )
     elif mode == Mode.PLAYER_TRACKING:

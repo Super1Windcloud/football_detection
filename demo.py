@@ -1,5 +1,20 @@
 from main import Mode, start_run_model
 import os
+import time
+from functools import wraps
+
+
+def cost_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        try:
+            return func(*args, **kwargs)
+        finally:
+            end = time.perf_counter() - start
+            print(f"{func.__name__} cost time {end}")
+
+    return wrapper
 
 
 def select_mode():
@@ -27,7 +42,7 @@ if __name__ == "__main__":
 
     for video_file in videos_files:
         file_name = video_file.split(".")[0].replace("\\", "/")
-        if  file_name.__contains__("detection_result") :
+        if file_name.__contains__("detection_result"):
             continue
         video_file = os.path.join("./videos/", video_file)
         if os.path.isfile(video_file):
@@ -35,11 +50,17 @@ if __name__ == "__main__":
                 "./videos/", file_name + "_detection_result.mp4"
             ).replace("\\", "/")
             print(target_file)
-            start_run_model(
-                source_video_path=video_file,
-                target_video_path=target_file,
-                device="cuda",
-                mode=mode,
-            )
+
+            @cost_time
+            def execute_inference():
+                start_run_model(
+                    source_video_path=video_file,
+                    target_video_path=target_file,
+                    device="cuda",
+                    mode=mode,
+                )
+
+            execute_inference()
+
 
 
