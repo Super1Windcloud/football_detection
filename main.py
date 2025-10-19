@@ -140,9 +140,11 @@ def render_radar(
 
 def run_pitch_detection(source_video_path: str, device: str) -> Iterator[np.ndarray]:
     pitch_detection_model = YOLO(PITCH_DETECTION_MODEL_PATH).to(device=device)
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path, stride=2
+    )
     for frame in frame_generator:
-        result = pitch_detection_model(frame, verbose=False)[0]
+        result = pitch_detection_model(source=frame, verbose=False)[0]
         keypoints = sv.KeyPoints.from_ultralytics(result)
 
         annotated_frame = frame.copy()
@@ -154,9 +156,12 @@ def run_pitch_detection(source_video_path: str, device: str) -> Iterator[np.ndar
 
 def run_player_detection(source_video_path: str, device: str) -> Iterator[np.ndarray]:
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
+
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path, stride=2
+    )
     for frame in frame_generator:
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model.predict(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
 
         annotated_frame = frame.copy()
@@ -193,7 +198,8 @@ def run_ball_detection_speed(
 ) -> Iterator[np.ndarray]:
     ball_detection_model = YOLO(BALL_DETECTION_MODEL_PATH).to(device=device)
     frame_generator = sv.get_video_frames_generator(
-        source_path=source_video_path
+        source_path=source_video_path,
+        stride=2,
     )
     ball_tracker = BallTracker(buffer_size=20)
     ball_annotator = BallAnnotator(radius=6, buffer_size=10)
@@ -208,10 +214,12 @@ def run_ball_detection_speed(
 
 def run_player_tracking(source_video_path: str, device: str) -> Iterator[np.ndarray]:
     player_detection_model = YOLO(PLAYER_DETECTION_MODEL_PATH).to(device=device)
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path, stride=2
+    )
     tracker = sv.ByteTrack(minimum_consecutive_frames=3)
     for frame in frame_generator:
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
         detections = tracker.update_with_detections(detections)
 
@@ -235,17 +243,19 @@ def run_team_classification(
 
     crops = []
     for frame in tqdm(frame_generator, desc="collecting crops"):
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
         crops += get_crops(frame, detections[detections.class_id == PLAYER_CLASS_ID])
 
     team_classifier = TeamClassifier(device=device)
     team_classifier.fit(crops)
 
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path, stride=2
+    )
     tracker = sv.ByteTrack(minimum_consecutive_frames=3)
     for frame in frame_generator:
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
         detections = tracker.update_with_detections(detections)
 
@@ -290,19 +300,21 @@ def run_radar(source_video_path: str, device: str) -> Iterator[np.ndarray]:
 
     crops = []
     for frame in tqdm(frame_generator, desc="collecting crops"):
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
         crops += get_crops(frame, detections[detections.class_id == PLAYER_CLASS_ID])
 
     team_classifier = TeamClassifier(device=device)
     team_classifier.fit(crops)
 
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
+    frame_generator = sv.get_video_frames_generator(
+        source_path=source_video_path, stride=2
+    )
     tracker = sv.ByteTrack(minimum_consecutive_frames=3)
     for frame in frame_generator:
         result = pitch_detection_model(frame, verbose=False)[0]
         keypoints = sv.KeyPoints.from_ultralytics(result)
-        result = player_detection_model(frame, imgsz=1280, verbose=False)[0]
+        result = player_detection_model(frame, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
         detections = tracker.update_with_detections(detections)
 
