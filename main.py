@@ -161,35 +161,11 @@ def run_player_detection(source_video_path: str, device: str) -> Iterator[np.nda
         source_path=source_video_path, stride=2
     )
     for frame in frame_generator:
-        result = player_detection_model.predict(frame, verbose=False)[0]
+        result = player_detection_model.predict(frame, imgsz=640, verbose=False)[0]
         detections = sv.Detections.from_ultralytics(result)
-
         annotated_frame = frame.copy()
         annotated_frame = BOX_ANNOTATOR.annotate(annotated_frame, detections)
         annotated_frame = BOX_LABEL_ANNOTATOR.annotate(annotated_frame, detections)
-        yield annotated_frame
-
-
-def run_ball_detection(source_video_path: str, device: str) -> Iterator[np.ndarray]:
-    ball_detection_model = YOLO(BALL_DETECTION_MODEL_PATH).to(device=device)
-    frame_generator = sv.get_video_frames_generator(source_path=source_video_path)
-    ball_tracker = BallTracker(buffer_size=20)
-    ball_annotator = BallAnnotator(radius=6, buffer_size=10)
-
-    def callback(image_slice: np.ndarray) -> sv.Detections:
-        result = ball_detection_model(image_slice, imgsz=640, verbose=False)[0]
-        return sv.Detections.from_ultralytics(result)
-
-    slicer = sv.InferenceSlicer(
-        callback=callback,
-        slice_wh=(640, 640),
-    )
-
-    for frame in frame_generator:
-        detections = slicer(frame).with_nms(threshold=0.1)
-        detections = ball_tracker.update(detections)
-        annotated_frame = frame.copy()
-        annotated_frame = ball_annotator.annotate(annotated_frame, detections)
         yield annotated_frame
 
 
